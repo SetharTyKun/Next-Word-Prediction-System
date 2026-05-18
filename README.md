@@ -4,14 +4,14 @@ A statistical next-word prediction system for the Khmer language, built in MATLA
 📁 Project Structure
 Next-Word-Prediction-System/
 
-├── raw.txt               # Original raw Khmer text corpus
+├── tokenization.py                 # Python tokenizer using khmer-nltk
 
-├── tokenization.py       # Python tokenizer using khmer-nltk
+├── raw.txt                         # Original raw Khmer text corpus
 
-├── data.txt              # Pre-tokenized corpus (words separated by spaces, UTF-8)
+├── data.txt                        # Pre-tokenized corpus (words separated by spaces, UTF-8)
 
-├── WordPrediction.m      # MATLAB: model training, evaluation, and export
+├── WordPrediction.m                # MATLAB: model training, evaluation, and export
 
-├── Model.mat             # Auto-generated model file (created by WordPrediction.m)
+├── Model.mat                       # Auto-generated model file (created by WordPrediction.m)
 
-├── PredictorApp.m        # MATLAB: dark-themed GUI prediction app
+├── PredictorApp.m                  # MATLAB: GUI prediction app
