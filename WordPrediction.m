@@ -11,6 +11,8 @@ words = words(~cellfun('isempty', words));                  % Filter out empty c
 vocab = unique(words);                                              % Only unique word + sort              vocab = {'កម្ពុជា', 'ការអប់រំ', 'នៅ', 'ប្រទេស', 'ប្រពៃណី', ...}
 vocabSize = numel(vocab);
 
+fprintf('Vocabulary: %d\n', vocabSize);
+
 % Split words: 80% For Training & 20% For Testing
 N = numel(words); 
 trainSize = floor(0.8 * N);
@@ -128,12 +130,70 @@ fprintf('Total predictions   : %d\n', total3);
 fprintf('Accuracy            : %.2f%%\n', accuracy3);
 fprintf('============================================\n');
 
+% ===============
+% Vector Model
+% ===============
 
+% Stage 1 — Co-occurrence Matrix (window = 2)
+windowSize   = 2;
+cooccurCount = zeros(vocabSize, vocabSize);
+for i = 1:numel(trainWords)
+    idx_center = find(strcmp(vocab, trainWords{i}));
+    if isempty(idx_center), continue; end
+    for j = max(1, i - windowSize) : min(numel(trainWords), i + windowSize)
+        if j == i, continue; end
+        idx_context = find(strcmp(vocab, trainWords{j}));
+        if isempty(idx_context), continue; end
+        cooccurCount(idx_center, idx_context) = cooccurCount(idx_center, idx_context) + 1;
+    end
+end
 
+% Stage 2 — PPMI Weighting
+totalCount  = sum(cooccurCount(:));
+wordProb    = sum(cooccurCount, 2) / totalCount;   % vocabSize x 1
+contextProb = sum(cooccurCount, 1) / totalCount;   % 1 x vocabSize
+jointProb   = cooccurCount / totalCount;
+expected    = wordProb * contextProb;              % outer product  vocabSize x vocabSize
+pmiMatrix   = log2(jointProb ./ (expected + eps));
+pmiMatrix(cooccurCount == 0) = 0;
+ppmiMatrix  = max(0, pmiMatrix);
 
+% Stage 3 — SVD Dimensionality Reduction (k = 50)
+k           = 50;
+[U, S, ~]   = svds(ppmiMatrix, k);
+wordVectors = U * S;                               % vocabSize x k
+
+% Stage 4 — Normalise vectors for cosine similarity
+norms       = sqrt(sum(wordVectors .^ 2, 2)) + eps;
+wordVectorsNorm = wordVectors ./ norms;
+
+% Stage 5 — Evaluate Vector Model
+correct_v = 0;
+total_v   = 0;
+for i = 1:numel(testWords)-1
+    inputWord  = testWords{i};
+    actualNext = testWords{i+1};
+    if any(strcmp(vocab, inputWord))
+        predicted_v = predictVector(inputWord, vocab, wordVectorsNorm);
+        if ~strcmp(predicted_v, '[unknown]')
+            total_v = total_v + 1;
+            if strcmp(predicted_v, actualNext)
+                correct_v = correct_v + 1;
+            end
+        end
+    end
+end
+accuracy_v = (correct_v / total_v) * 100;
+fprintf('\n============================================\n');
+fprintf('Vector Model Evaluation\n');
+fprintf('============================================\n');
+fprintf('Correct predictions : %d\n', correct_v);
+fprintf('Total predictions   : %d\n', total_v);
+fprintf('Accuracy            : %.2f%%\n', accuracy_v);
+fprintf('============================================\n');
 
 % Save Model to Model.mat
-save('Model.mat', 'bigramProb', 'vocab', 'vocabSize', 'trigramProb');
+save('Model.mat', 'bigramProb', 'vocab', 'vocabSize', 'trigramProb', 'wordVectorsNorm');
 
 % Prediction Functions (must be at end)
 function nextWord = predictBigram(inputWord, vocab, bigramProb)
@@ -145,6 +205,19 @@ function nextWord = predictBigram(inputWord, vocab, bigramProb)
     row = bigramProb(idx, :);
     [~, maxIdx] = max(row);
     nextWord = vocab{maxIdx};
+end
+
+function nextWord = predictVector(inputWord, vocab, wordVectorsNorm)
+    idx = find(strcmp(vocab, inputWord));
+    if isempty(idx)
+        nextWord = '[unknown]';
+        return;
+    end
+    queryVec     = wordVectorsNorm(idx, :);
+    similarities = wordVectorsNorm * queryVec';    % cosine similarity for all words
+    similarities(idx) = -inf;                      % exclude the word itself
+    [~, maxIdx]  = max(similarities);
+    nextWord     = vocab{maxIdx};
 end
 
 function nextWord = predictTrigram(word1, word2, vocab, trigramProb)

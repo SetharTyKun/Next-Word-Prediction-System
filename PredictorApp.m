@@ -8,10 +8,11 @@ function PredictorApp()
 % ============================================
 % Load Model
 % ============================================
-loaded      = load('Model.mat');
-vocab       = loaded.vocab;
-bigramProb  = loaded.bigramProb;
-trigramProb = loaded.trigramProb;
+loaded          = load('Model.mat');
+vocab           = loaded.vocab;
+bigramProb      = loaded.bigramProb;
+trigramProb     = loaded.trigramProb;
+wordVectorsNorm = loaded.wordVectorsNorm;
 
 % ============================================
 % Colors
@@ -109,9 +110,8 @@ btnVector = uibutton(fig, ...
     'FontName',        'Khmer UI', ...
     'FontSize',        12, ...
     'FontWeight',      'bold', ...
-    'FontColor',       disabledFg, ...
-    'BackgroundColor', disabledBg, ...
-    'Enable',          'off', ...
+    'FontColor',       grayText, ...
+    'BackgroundColor', cardColor, ...
     'Position',        [btnStartX + 2*(btnW + gap) 420 btnW btnH]);
 
 btnBigram.ButtonPushedFcn  = @(~,~) selectModel(1);
@@ -277,6 +277,32 @@ uilabel(fig, ...
                 candidateWords         = vocab(nonZeroIdx(sortOrd));
                 resultHTML.HTMLSource  = buildMultiResultHTML(candidateWords, sortedProbs, resultGreen);
                 statusLabel.Text       = '';
+
+            case 3   % Vector
+                if any(inputWord == ' ')
+                    resultHTML.HTMLSource = buildResultHTML('Enter ONE word only.', errorRed);
+                    statusLabel.Text      = '';
+                    return;
+                end
+                idx = find(strcmp(vocab, inputWord));
+                if isempty(idx)
+                    resultHTML.HTMLSource = buildResultHTML('គ្មានពាក្យ', errorRed);
+                    statusLabel.Text      = '';
+                    return;
+                end
+                queryVec              = wordVectorsNorm(idx, :);
+                similarities          = wordVectorsNorm * queryVec';
+                similarities(idx)     = -inf;                        % exclude the word itself
+                posIdx                = find(similarities > 0);
+                if isempty(posIdx)
+                    resultHTML.HTMLSource = buildResultHTML('No prediction available.', errorRed);
+                    statusLabel.Text      = '';
+                    return;
+                end
+                [sortedSims, sortOrd] = sort(similarities(posIdx), 'descend');
+                candidateWords        = vocab(posIdx(sortOrd));
+                resultHTML.HTMLSource = buildMultiResultHTML(candidateWords, sortedSims, resultGreen);
+                statusLabel.Text      = '';
 
             otherwise
                 resultHTML.HTMLSource = buildResultHTML('Model not yet available.', errorRed);
