@@ -4,6 +4,8 @@ import re
 with open('raw.txt', 'r', encoding='utf-8') as f:
     text = f.read()
 
+text = text.replace('\u17D4', '')  # Strip Khmer period before tokenizing
+
 words = word_tokenize(text)
 
 # Keep only pure Khmer words (Khmer unicode range: \u1780-\u17FF)
