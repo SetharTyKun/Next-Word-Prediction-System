@@ -1,5 +1,5 @@
-from khmernltk import word_tokenize
-import re
+from khmernltk import word_tokenize         % import word_tokenize function from library khmer language natural language
+import re                                                  % import regular expression 
 
 with open('raw.txt', 'r', encoding='utf-8') as f:
     text = f.read()
