@@ -314,6 +314,23 @@ uilabel(fig, ...
                 end
                 [sortedSims, sortOrd] = sort(similarities(posIdx), 'descend');
                 candidateWords        = vocab(posIdx(sortOrd));
+                sortedSims            = sortedSims;
+
+                % Filter candidates to match input language
+                inputIsKhmer = any(inputWord >= 0x1780 & inputWord <= 0x17FF);
+                keepMask = false(1, numel(candidateWords));
+                for ci = 1:numel(candidateWords)
+                    wordIsKhmer = any(candidateWords{ci} >= 0x1780 & candidateWords{ci} <= 0x17FF);
+                    keepMask(ci) = (inputIsKhmer == wordIsKhmer);
+                end
+                candidateWords = candidateWords(keepMask);
+                sortedSims     = sortedSims(keepMask);
+
+                if isempty(candidateWords)
+                    resultHTML.HTMLSource = buildResultHTML('No prediction available.', errorRed);
+                    statusLabel.Text      = '';
+                    return;
+                end
                 resultHTML.HTMLSource = buildMultiResultHTML(candidateWords, sortedSims, resultGreen);
                 statusLabel.Text      = '';
 
