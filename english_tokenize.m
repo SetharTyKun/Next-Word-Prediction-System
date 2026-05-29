@@ -1,31 +1,24 @@
-% ============================================
-% english_tokenize.m
-% Tokenize English raw text → english_data.txt
-% ============================================
-
 % Read raw English text
-fid = fopen('english_raw.txt', 'r', 'n', 'UTF-8');
-raw = fscanf(fid, '%c');
-fclose(fid);
+fileReader = fopen('english_raw.txt', 'r', 'n', 'UTF-8');
+rawText = fscanf(fileReader, '%c');
+fclose(fileReader);
 
-% Lowercase
-raw = lower(raw);
+% Lowercase everything
+cleanText = lower(rawText);
 
 % Remove punctuation (keep only letters, digits, spaces, newlines)
-raw = regexprep(raw, '[^a-z0-9\s]', ' ');
+cleanText = regexprep(cleanText, '[^a-z0-9\s]', ' ');
 
 % Replace all whitespace (newlines, tabs, multiple spaces) with single space
-raw = regexprep(raw, '\s+', ' ');
+cleanText = regexprep(cleanText, '\s+', ' ');
 
 % Trim leading/trailing spaces
-raw = strtrim(raw);
+cleanText = strtrim(cleanText);
 
 % Write to english_data.txt
-fid = fopen('english_data.txt', 'w', 'n', 'UTF-8');
-fprintf(fid, '%s', raw);
-fclose(fid);
+fileWriter = fopen('english_data.txt', 'w', 'n', 'UTF-8');
+fprintf(fileWriter, '%s', cleanText);
+fclose(fileWriter);
 
-% Count tokens for feedback
-tokens = strsplit(raw);
-fprintf('Total English tokens: %d\n', numel(tokens));
-fprintf('Done. Output saved to english_data.txt\n');
+wordList = strsplit(cleanText);
+fprintf('Total English words: %d\n', numel(wordList));
