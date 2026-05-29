@@ -2,8 +2,13 @@
 % Part 1 :  Data Preparation
 % ============================================
 
+% Merge khmer_data.txt + english_data.txt → combined text
+khmer_text   = fileread('khmer_data.txt');
+english_text = fileread('english_data.txt');
+text = [strtrim(khmer_text), ' ', strtrim(english_text)];           % text = "ប្រវត្តិសាស្ត្រ ខ្មែរ មាន អាយុ ... រីកចំរើន khmer history cambodian history spans ... prosperity"
+
 % Read & Filter
-text = fileread('data.txt');                                            % read file                                     text = 'ប្រពៃណី ការអប់រំ  នៅ ប្រទេស កម្ពុជា ... ការអប់រំ'
+% text is now the merged Khmer + English corpus
 words = strsplit(text);                                                 % Split word by ONE space             words = {'ប្រពៃណី', 'ការអប់រំ', '', 'នៅ', 'ប្រទេស', '', 'កម្ពុជា', ... , 'ការអប់រំ'}
 words = words(~cellfun('isempty', words));                  % Filter out empty cell                     words = {'ប្រពៃណី', 'ការអប់រំ', 'នៅ', 'ប្រទេស', 'កម្ពុជា', ..., 'ការអប់រំ'}
 
@@ -25,7 +30,7 @@ testWords = words(trainSize + 1 : end);
 
 % ===============
 % Bigram Model
-% ===============
+% =============== 
 
 % Bigram Frequency Matrix 
 bigramCount = zeros(vocabSize, vocabSize);                  % Creates an empty matrix filled with zeros
@@ -67,7 +72,6 @@ fprintf('============================================\n');
 fprintf('Correct predictions : %d\n', correct);
 fprintf('Total predictions   : %d\n', total);
 fprintf('Accuracy            : %.2f%%\n', accuracy);
-fprintf('============================================\n');
 
 % ===============
 % Trigram Model
@@ -128,7 +132,6 @@ fprintf('============================================\n');
 fprintf('Correct predictions : %d\n', correct3);
 fprintf('Total predictions   : %d\n', total3);
 fprintf('Accuracy            : %.2f%%\n', accuracy3);
-fprintf('============================================\n');
 
 % ===============
 % Vector Model
@@ -190,7 +193,7 @@ fprintf('============================================\n');
 fprintf('Correct predictions : %d\n', correct_v);
 fprintf('Total predictions   : %d\n', total_v);
 fprintf('Accuracy            : %.2f%%\n', accuracy_v);
-fprintf('============================================\n');
+
 
 % Save Model to Model.mat
 save('Model.mat', 'bigramProb', 'vocab', 'vocabSize', 'trigramProb', 'wordVectorsNorm');

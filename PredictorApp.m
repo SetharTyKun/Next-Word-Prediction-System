@@ -59,7 +59,7 @@ uilabel(fig, ...
 % Input Label
 % ============================================
 inputLabel = uilabel(fig, ...
-    'Text',                'Enter a Khmer word:', ...
+    'Text',                'Enter a word (Khmer or English):', ...
     'FontName',            'Khmer UI', ...
     'FontSize',            13, ...
     'FontColor',           grayText, ...
@@ -197,9 +197,9 @@ uilabel(fig, ...
             end
         end
         if k == 2
-            inputLabel.Text = 'Enter two Khmer words together (no space):';
+            inputLabel.Text = 'Enter two words (Khmer: no space | English: use space):';
         else
-            inputLabel.Text = 'Enter a Khmer word:';
+            inputLabel.Text = 'Enter a word (Khmer or English):';
         end
         inputField.Value      = '';
         resultHTML.HTMLSource = buildResultHTML('- - -', resultGreen);
@@ -209,6 +209,8 @@ uilabel(fig, ...
     function onPredict(~, ~)
 
         inputWord = strtrim(inputField.Value);
+        % Normalize: lowercase English input (Khmer is unaffected by lower())
+        inputWord = lower(inputWord);
 
         if isempty(inputWord)
             resultHTML.HTMLSource = buildResultHTML('Please enter a word.', errorRed);
@@ -225,7 +227,7 @@ uilabel(fig, ...
                 end
                 idx = find(strcmp(vocab, inputWord));
                 if isempty(idx)
-                    resultHTML.HTMLSource = buildResultHTML('គ្មានពាក្យ', errorRed);
+                    resultHTML.HTMLSource = buildResultHTML('គ្មានពាក្យ / Word not found', errorRed);
                     statusLabel.Text      = '';
                     return;
                 end
@@ -245,24 +247,35 @@ uilabel(fig, ...
                 word1 = '';
                 word2 = '';
                 found = false;
-                for s = 1:numel(inputWord)-1
-                    candidate1 = inputWord(1:s);
-                    candidate2 = inputWord(s+1:end);
-                    if any(strcmp(vocab, candidate1)) && any(strcmp(vocab, candidate2))
-                        word1 = candidate1;
-                        word2 = candidate2;
+                if any(inputWord == ' ')
+                    % English: split on space directly
+                    parts = strsplit(inputWord);
+                    if numel(parts) == 2 && any(strcmp(vocab, parts{1})) && any(strcmp(vocab, parts{2}))
+                        word1 = parts{1};
+                        word2 = parts{2};
                         found = true;
-                        break;
+                    end
+                else
+                    % Khmer: scan every character split point
+                    for s = 1:numel(inputWord)-1
+                        candidate1 = inputWord(1:s);
+                        candidate2 = inputWord(s+1:end);
+                        if any(strcmp(vocab, candidate1)) && any(strcmp(vocab, candidate2))
+                            word1 = candidate1;
+                            word2 = candidate2;
+                            found = true;
+                            break;
+                        end
                     end
                 end
                 if ~found
-                    resultHTML.HTMLSource = buildResultHTML('សូមសរសេរពីរពាក្យ', warnYellow);
+                    resultHTML.HTMLSource = buildResultHTML('សូមសរសេរពីរពាក្យ / Enter two valid words', warnYellow);
                     statusLabel.Text      = '';
                     return;
                 end
                 key = [word1, ' ', word2];
                 if ~isKey(trigramProb, key)
-                    resultHTML.HTMLSource = buildResultHTML('គ្មានពាក្យ', errorRed);
+                    resultHTML.HTMLSource = buildResultHTML('គ្មានពាក្យ / Word not found', errorRed);
                     statusLabel.Text      = '';
                     return;
                 end
@@ -286,7 +299,7 @@ uilabel(fig, ...
                 end
                 idx = find(strcmp(vocab, inputWord));
                 if isempty(idx)
-                    resultHTML.HTMLSource = buildResultHTML('គ្មានពាក្យ', errorRed);
+                    resultHTML.HTMLSource = buildResultHTML('គ្មានពាក្យ / Word not found', errorRed);
                     statusLabel.Text      = '';
                     return;
                 end
